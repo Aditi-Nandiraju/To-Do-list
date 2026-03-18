@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<div class="flex justify-center gap-4 p-4 bg-black text-white">
+  <button onclick="showPage('todo')">To-Do List</button>
+  <button onclick="showPage('daily')">Daily Tracker</button>
+</div>
+
+<div id="todo" class="p-6">
+  <h1 class="text-2xl font-bold mb-4">To-Do Sections</h1>
+  <div id="sections"></div>
+  <div class="mt-4">
+    <input id="sectionName" placeholder="New Section Name" class="p-2 border rounded" />
+    <button onclick="addSection()" class="bg-black text-white px-4 py-2 rounded">Add Section</button>
+  </div>
+</div>
+
+<div id="daily" class="p-6 hidden">
+  <h1 class="text-2xl font-bold mb-4">Daily Tracker</h1>
+  <div id="dailySections"></div>
+  <div class="mt-4">
+    <input id="dailySectionName" placeholder="New Daily Section" class="p-2 border rounded" />
+    <button onclick="addDailySection()" class="bg-black text-white px-4 py-2 rounded">Add</button>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('todoData')) || { sections: [], daily: [] };
+
+function saveData() {
+  localStorage.setItem('todoData', JSON.stringify(data));
+}
+
+function showPage(page) {
+  document.getElementById('todo').classList.add('hidden');
+  document.getElementById('daily').classList.add('hidden');
+  document.getElementById(page).classList.remove('hidden');
+}
+
+function render() {
+  const sectionsDiv = document.getElementById('sections');
+  sectionsDiv.innerHTML = '';
+
+  data.sections.forEach((sec, i) => {
+    const div = document.createElement('div');
+    div.className = "bg-white p-4 rounded shadow mb-4";
+
+    div.innerHTML = `
+      <div class="flex justify-between">
+        <h2 class="font-bold">${sec.name}</h2>
+        <button onclick="deleteSection(${i})" class="text-red-500">Delete</button>
+      </div>
+      <div>
+        ${sec.tasks.map((t, j) => `
+          <div class="flex justify-between items-center mt-2">
+            <div>
+              <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${i},${j})" />
+              ${t.text} (${t.date})
+            </div>
+            <button onclick="deleteTask(${i},${j})" class="text-red-500">X</button>
+          </div>
+        `).join('')}
+      </div>
+      <input placeholder="Task..." id="task-${i}" class="p-2 border rounded mt-2" />
+      <input type="date" id="date-${i}" class="p-2 border rounded" />
+      <button onclick="addTask(${i})" class="bg-black text-white px-3 py-1 rounded mt-2">Add Task</button>
+    `;
+
+    sectionsDiv.appendChild(div);
+  });
+
+  const dailyDiv = document.getElementById('dailySections');
+  dailyDiv.innerHTML = '';
+
+  data.daily.forEach((sec, i) => {
+    const div = document.createElement('div');
+    div.className = "bg-white p-4 rounded shadow mb-4";
+
+    div.innerHTML = `
+      <div class="flex justify-between">
+        <h2 class="font-bold">${sec.name}</h2>
+        <button onclick="deleteDailySection(${i})" class="text-red-500">Delete</button>
+      </div>
+      ${sec.tasks.map((t, j) => `
+        <div class="flex justify-between items-center mt-2">
+          <div>
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleDaily(${i},${j})" />
+            ${t.text}
+          </div>
+          <button onclick="deleteDailyTask(${i},${j})" class="text-red-500">X</button>
+        </div>
+      `).join('')}
+      <input placeholder="Task..." id="dtask-${i}" class="p-2 border rounded mt-2" />
+      <button onclick="addDailyTask(${i})" class="bg-black text-white px-3 py-1 rounded mt-2">Add</button>
+    `;
+
+    dailyDiv.appendChild(div);
+  });
+}
+
+function addSection() {
+  const name = document.getElementById('sectionName').value;
+  if (!name) return;
+  data.sections.push({ name, tasks: [] });
+  saveData(); render();
+}
+
+function deleteSection(i) {
+  data.sections.splice(i,1);
+  saveData(); render();
+}
+
+function addTask(i) {
+  const text = document.getElementById(`task-${i}`).value;
+  const dateInput = document.getElementById(`date-${i}`).value;
+  if (!text) return;
+
+  const date = dateInput || new Date().toISOString().split('T')[0];
+  data.sections[i].tasks.push({ text, date, done: false });
+  saveData(); render();
+}
+
+function deleteTask(i,j) {
+  data.sections[i].tasks.splice(j,1);
+  saveData(); render();
+}
+
+function toggleTask(i,j) {
+  data.sections[i].tasks[j].done = !data.sections[i].tasks[j].done;
+  saveData();
+}
+
+function addDailySection() {
+  const name = document.getElementById('dailySectionName').value;
+  if (!name) return;
+  data.daily.push({ name, tasks: [] });
+  saveData(); render();
+}
+
+function deleteDailySection(i) {
+  data.daily.splice(i,1);
+  saveData(); render();
+}
+
+function addDailyTask(i) {
+  const text = document.getElementById(`dtask-${i}`).value;
+  if (!text) return;
+  data.daily[i].tasks.push({ text, done: false });
+  saveData(); render();
+}
+
+function deleteDailyTask(i,j) {
+  data.daily[i].tasks.splice(j,1);
+  saveData(); render();
+}
+
+function toggleDaily(i,j) {
+  data.daily[i].tasks[j].done = !data.daily[i].tasks[j].done;
+  saveData();
+}
+
+render();
+</script>
+
+</body>
+</html>
